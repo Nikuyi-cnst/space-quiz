@@ -62,6 +62,8 @@
     .dot { width: 5px; height: 5px; background: var(--purple); border-radius: 50%; }
     h2 { font-size: 21px; line-height: 1.55; letter-spacing: -.6px; margin: 9px 0 5px; word-break: keep-all; }
     .hint { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+    .hint-toggle { display: inline-flex; align-items: center; gap: 6px; margin: -8px 0 14px; padding: 5px 0; border: 0; background: transparent; color: var(--purple); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .hint-content { margin: 0 0 16px; padding: 10px 12px; border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0; background: var(--purple-soft); color: var(--text); font-size: 13px; }
     .answers { display: grid; gap: 10px; }
     .answer { width: 100%; display: flex; align-items: center; gap: 13px; text-align: left; border: 1px solid var(--line); padding: 12px 14px; min-height: 53px; border-radius: 11px; color: var(--text); background: var(--card); cursor: pointer; transition: background .2s, border-color .2s, transform .2s; }
     .answer:not(:disabled):hover { background: var(--purple-soft); border-color: #ab9ae6; transform: translateY(-1px); }
@@ -197,6 +199,8 @@
           <div class="question-meta"><span class="dot"></span><span id="category"></span></div>
           <h2 id="question" tabindex="-1"></h2>
           <p class="hint">정답이라고 생각하는 하나를 골라 주세요.</p>
+          <button class="hint-toggle" id="hint-toggle" type="button" aria-expanded="false" aria-controls="question-hint">힌트 보기</button>
+          <p class="hint-content" id="question-hint" hidden></p>
           <div class="answers" id="answers" role="group" aria-labelledby="question"></div>
           <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
           <button class="next" id="next" disabled>답을 선택해 주세요</button>
@@ -226,16 +230,16 @@
   <script>
     "use strict";
     const questions = [
-      { category: "태양계 · OUR SOLAR SYSTEM", question: "태양계에서 가장 큰 행성은 무엇일까요?", answers: ["지구", "토성", "목성", "해왕성"], correct: 2, fact: "목성의 부피는 지구 약 1,321개가 들어갈 만큼 커요. 태양계 행성 중 가장 거대한 가스 행성이죠." },
-      { category: "달 탐사 · MOON LANDING", question: "인류가 처음 달에 발을 디딘 해는 언제일까요?", answers: ["1957년", "1969년", "1977년", "1989년"], correct: 1, fact: "1969년, 아폴로 11호의 닐 암스트롱과 버즈 올드린이 달 표면을 걸었어요." },
-      { category: "붉은 행성 · THE RED PLANET", question: "화성이 붉게 보이는 이유는 무엇일까요?", answers: ["표면의 산화철 때문에", "뜨거운 용암 때문에", "붉은 구름 때문에", "태양빛이 더 강해서"], correct: 0, fact: "화성의 토양에는 녹과 같은 성분인 산화철이 들어 있어요. 이 먼지가 화성을 붉게 보이게 해요." },
-      { category: "우리의 별 · THE SUN", question: "태양이 에너지를 만들어 내는 주된 원리는?", answers: ["석탄의 연소", "핵분열", "전기 방전", "핵융합"], correct: 3, fact: "태양 중심에서는 수소 원자핵들이 헬륨으로 융합하면서 엄청난 에너지를 내요." },
-      { category: "우주 속 거리 · COSMIC DISTANCE", question: "‘광년’은 무엇을 나타내는 단위일까요?", answers: ["별의 나이", "빛의 밝기", "거리", "시간"], correct: 2, fact: "1광년은 빛이 진공에서 1년 동안 이동하는 거리예요. 약 9조 4,600억 km에 달해요!" },
-      { category: "고리의 세계 · RING WORLD", question: "크고 뚜렷한 고리로 유명한 행성은?", answers: ["수성", "토성", "금성", "화성"], correct: 1, fact: "토성의 고리는 대부분 얼음 조각과 암석으로 이루어져 있어요. 다른 거대 행성들도 고리를 가지고 있답니다." },
-      { category: "궤도 위의 집 · LIFE IN ORBIT", question: "국제우주정거장(ISS)은 주로 어디를 돌고 있을까요?", answers: ["달 주변", "태양과 화성 사이", "목성 주변", "지구 주변의 낮은 궤도"], correct: 3, fact: "ISS는 지구 상공 약 400km에서 궤도를 돌아요. 약 90분마다 지구를 한 바퀴 돌죠." },
-      { category: "우주의 경계 · BLACK HOLES", question: "블랙홀의 ‘사건의 지평선’은 어떤 경계일까요?", answers: ["빛조차 빠져나올 수 없는 경계", "별이 탄생하는 경계", "우주가 끝나는 경계", "중력이 사라지는 경계"], correct: 0, fact: "사건의 지평선 안쪽에서는 빛조차 바깥으로 나올 수 없어요. 우주의 끝을 뜻하는 것은 아니에요." },
-      { category: "우리의 은하 · MILKY WAY", question: "태양계가 속해 있는 은하의 이름은?", answers: ["안드로메다은하", "삼각형자리은하", "우리은하", "솜브레로은하"], correct: 2, fact: "태양계는 우리은하에 속해 있어요. 밤하늘의 은하수는 우리은하의 수많은 별이 띠처럼 보이는 모습이에요." },
-      { category: "먼 우주로 · DEEP SPACE", question: "인류가 만든 탐사선 중 최초로 성간 공간에 진입한 것은?", answers: ["아폴로 11호", "보이저 1호", "큐리오시티", "주노"], correct: 1, fact: "보이저 1호는 2012년 태양권계면을 넘어 성간 공간에 진입했어요. 1977년에 시작한 여행이 지금도 이어지고 있죠." }
+      { category: "태양계 · OUR SOLAR SYSTEM", question: "태양계에서 가장 큰 행성은 무엇일까요?", answers: ["지구", "토성", "목성", "해왕성"], correct: 2, hint: "거대한 붉은 소용돌이 무늬가 유명한 행성을 찾아보세요.", fact: "목성의 부피는 지구 약 1,321개가 들어갈 만큼 커요. 태양계 행성 중 가장 거대한 가스 행성이죠." },
+      { category: "달 탐사 · MOON LANDING", question: "인류가 처음 달에 발을 디딘 해는 언제일까요?", answers: ["1957년", "1969년", "1977년", "1989년"], correct: 1, hint: "아폴로 11호가 달에 착륙한 해를 떠올려 보세요.", fact: "1969년, 아폴로 11호의 닐 암스트롱과 버즈 올드린이 달 표면을 걸었어요." },
+      { category: "붉은 행성 · THE RED PLANET", question: "화성이 붉게 보이는 이유는 무엇일까요?", answers: ["표면의 산화철 때문에", "뜨거운 용암 때문에", "붉은 구름 때문에", "태양빛이 더 강해서"], correct: 0, hint: "오래된 철이 공기와 만나면 생기는 붉은 물질과 관련 있어요.", fact: "화성의 토양에는 녹과 같은 성분인 산화철이 들어 있어요. 이 먼지가 화성을 붉게 보이게 해요." },
+      { category: "우리의 별 · THE SUN", question: "태양이 에너지를 만들어 내는 주된 원리는?", answers: ["석탄의 연소", "핵분열", "전기 방전", "핵융합"], correct: 3, hint: "수소 원자핵이 태양 중심에서 어떤 변화를 겪는지 생각해 보세요.", fact: "태양 중심에서는 수소 원자핵들이 헬륨으로 융합하면서 엄청난 에너지를 내요." },
+      { category: "우주 속 거리 · COSMIC DISTANCE", question: "‘광년’은 무엇을 나타내는 단위일까요?", answers: ["별의 나이", "빛의 밝기", "거리", "시간"], correct: 2, hint: "빛이 1년 동안 이동한 양은 무엇을 잴 때 쓰일까요?", fact: "1광년은 빛이 진공에서 1년 동안 이동하는 거리예요. 약 9조 4,600억 km에 달해요!" },
+      { category: "고리의 세계 · RING WORLD", question: "크고 뚜렷한 고리로 유명한 행성은?", answers: ["수성", "토성", "금성", "화성"], correct: 1, hint: "거대한 가스 행성 가운데 고리가 특히 눈에 띄는 행성이에요.", fact: "토성의 고리는 대부분 얼음 조각과 암석으로 이루어져 있어요. 다른 거대 행성들도 고리를 가지고 있답니다." },
+      { category: "궤도 위의 집 · LIFE IN ORBIT", question: "국제우주정거장(ISS)은 주로 어디를 돌고 있을까요?", answers: ["달 주변", "태양과 화성 사이", "목성 주변", "지구 주변의 낮은 궤도"], correct: 3, hint: "지구에서 우주비행사가 머물며 생활하는 정거장이에요.", fact: "ISS는 지구 상공 약 400km에서 궤도를 돌아요. 약 90분마다 지구를 한 바퀴 돌죠." },
+      { category: "우주의 경계 · BLACK HOLES", question: "블랙홀의 ‘사건의 지평선’은 어떤 경계일까요?", answers: ["빛조차 빠져나올 수 없는 경계", "별이 탄생하는 경계", "우주가 끝나는 경계", "중력이 사라지는 경계"], correct: 0, hint: "블랙홀 주변에서 빛이 바깥으로 나올 수 있는지 떠올려 보세요.", fact: "사건의 지평선 안쪽에서는 빛조차 바깥으로 나올 수 없어요. 우주의 끝을 뜻하는 것은 아니에요." },
+      { category: "우리의 은하 · MILKY WAY", question: "태양계가 속해 있는 은하의 이름은?", answers: ["안드로메다은하", "삼각형자리은하", "우리은하", "솜브레로은하"], correct: 2, hint: "밤하늘에 희미한 띠처럼 보이는 은하수와 같은 이름이에요.", fact: "태양계는 우리은하에 속해 있어요. 밤하늘의 은하수는 우리은하의 수많은 별이 띠처럼 보이는 모습이에요." },
+      { category: "먼 우주로 · DEEP SPACE", question: "인류가 만든 탐사선 중 최초로 성간 공간에 진입한 것은?", answers: ["아폴로 11호", "보이저 1호", "큐리오시티", "주노"], correct: 1, hint: "태양계를 벗어나 별과 별 사이를 향해 간 탐사선이에요.", fact: "보이저 1호는 2012년 태양권계면을 넘어 성간 공간에 진입했어요. 1977년에 시작한 여행이 지금도 이어지고 있죠." }
     ];
     const $ = id => document.getElementById(id);
     let current = 0;
@@ -303,6 +307,10 @@
       $("category").textContent = item.category;
       $("question").textContent = item.question;
       $("feedback").hidden = true;
+      $("hint-toggle").setAttribute("aria-expanded", "false");
+      $("hint-toggle").textContent = "힌트 보기";
+      $("question-hint").textContent = item.hint;
+      $("question-hint").hidden = true;
       $("next").disabled = true;
       $("next").textContent = "답을 선택해 주세요";
       $("answers").replaceChildren(...item.answers.map((text, i) => {
@@ -320,6 +328,13 @@
       updateProgress();
       if (focus) $("question").focus({ preventScroll: true });
     }
+
+    $("hint-toggle").addEventListener("click", () => {
+      const expanded = $("hint-toggle").getAttribute("aria-expanded") === "true";
+      $("hint-toggle").setAttribute("aria-expanded", String(!expanded));
+      $("hint-toggle").textContent = expanded ? "힌트 보기" : "힌트 숨기기";
+      $("question-hint").hidden = expanded;
+    });
 
     function choose(index) {
       if (answered) return;
