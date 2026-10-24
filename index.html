@@ -98,6 +98,19 @@
     .big-score span { color: var(--muted); font-size: 22px; letter-spacing: 0; }
     .result-stats { display: flex; justify-content: center; gap: 25px; font-size: 12px; margin-top: 12px; color: var(--muted); }
     .result-stats b { color: var(--text); }
+    .review { text-align: left; margin-top: 20px; }
+    .review-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); color: var(--text); cursor: pointer; font-weight: 700; text-align: left; }
+    .review-toggle::after { content: "+"; color: var(--purple); font-size: 20px; }
+    .review-toggle[aria-expanded="true"]::after { content: "−"; }
+    .review-content { padding-top: 12px; }
+    .review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .review-item { padding: 15px; border: 1px solid var(--line); border-radius: 10px; overflow-wrap: anywhere; }
+    .review-item h3 { margin: 0 0 10px; font-size: 15px; line-height: 1.6; }
+    .review-item p { margin: 6px 0 0; font-size: 13px; }
+    .review-item .review-answer { padding: 8px 10px; border-radius: 6px; }
+    .review-selected { color: var(--text); background: var(--red-bg); border-left: 3px solid var(--red); }
+    .review-correct { color: var(--text); background: var(--green-bg); border-left: 3px solid var(--green); }
+    .review-empty { margin: 0; font-size: 14px; }
     @keyframes float { 50% { transform: translateY(-7px) rotate(-3deg); } }
     @keyframes twinkle { to { opacity: .25; } }
     @keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
@@ -198,6 +211,10 @@
             <div class="big-score" id="final-score"></div>
             <div class="result-stats"><span>정답 <b id="correct-total"></b></span><span>정답률 <b id="accuracy"></b></span></div>
           </div>
+          <div class="review">
+            <button class="review-toggle" id="review-toggle" aria-expanded="false" aria-controls="review-content">틀린 문제 복습 · 0개</button>
+            <div class="review-content" id="review-content" hidden></div>
+          </div>
           <button class="next" id="restart">다시 탐험하기 ↗</button>
           <p class="card-bottom">새로운 발견은 언제나 다음 질문에서 시작돼요.</p>
         </div>
@@ -225,6 +242,44 @@
     let score = 0;
     let answered = false;
     const history = [];
+    const wrongAnswers = [];
+
+    function renderReview() {
+      $("review-toggle").textContent = `틀린 문제 복습 · ${wrongAnswers.length}개`;
+      $("review-toggle").setAttribute("aria-expanded", "false");
+      $("review-content").hidden = true;
+      $("review-content").replaceChildren();
+      if (wrongAnswers.length === 0) {
+        const message = document.createElement("p");
+        message.className = "review-empty";
+        message.textContent = "모두 정답이에요! 복습할 오답이 없어요.";
+        $("review-content").append(message);
+        return;
+      }
+      const list = document.createElement("ol");
+      list.className = "review-list";
+      list.setAttribute("aria-label", "틀린 문제 목록");
+      wrongAnswers.forEach(({ questionIndex, selectedIndex }) => {
+        const item = questions[questionIndex];
+        const entry = document.createElement("li");
+        entry.className = "review-item";
+        const title = document.createElement("h3");
+        title.textContent = `${questionIndex + 1}번. ${item.question}`;
+        entry.append(title);
+        [
+          ["review-answer review-selected", `✕ 내가 고른 답: ${item.answers[selectedIndex]}`],
+          ["review-answer review-correct", `✓ 정답: ${item.answers[item.correct]}`],
+          ["review-fact", `해설: ${item.fact}`]
+        ].forEach(([className, text]) => {
+          const paragraph = document.createElement("p");
+          paragraph.className = className;
+          paragraph.textContent = text;
+          entry.append(paragraph);
+        });
+        list.append(entry);
+      });
+      $("review-content").append(list);
+    }
 
     function updateProgress() {
       $("bar").style.width = `${history.length / questions.length * 100}%`;
@@ -273,6 +328,7 @@
       const item = questions[current];
       const correct = index === item.correct;
       history.push(correct);
+      if (!correct) wrongAnswers.push({ questionIndex: current, selectedIndex: index });
       if (correct) score += 10;
       $("score").textContent = score;
       Array.from($("answers").children).forEach((button, i) => {
@@ -322,14 +378,25 @@
         $("final-score").replaceChildren(document.createTextNode(score + " "), Object.assign(document.createElement("span"), { textContent: "/ 100" }));
         $("correct-total").textContent = `${score / 10} / 10`;
         $("accuracy").textContent = `${score}%`;
+        renderReview();
         $("result-title").focus({ preventScroll: true });
         $("results").scrollIntoView({ block: "nearest" });
       }
+    });
+    $("review-toggle").addEventListener("click", () => {
+      const expanded = $("review-toggle").getAttribute("aria-expanded") === "true";
+      $("review-toggle").setAttribute("aria-expanded", String(!expanded));
+      $("review-content").hidden = expanded;
     });
     $("restart").addEventListener("click", () => {
       current = 0;
       score = 0;
       history.length = 0;
+      wrongAnswers.length = 0;
+      $("review-toggle").setAttribute("aria-expanded", "false");
+      $("review-toggle").textContent = "틀린 문제 복습 · 0개";
+      $("review-content").hidden = true;
+      $("review-content").replaceChildren();
       $("score").textContent = "0";
       $("results").hidden = true;
       $("quiz").hidden = false;
