@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>오르빗 — 우주 탐험 퀴즈</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7fb; --card: #fff; --text: #252839; --muted: #85899c;
+      --line: #e9eaf2; --soft: #f7f7fc; --purple: #7160db; --purple-soft: #efecff;
+      --green: #208560; --green-bg: #eaf8f0; --red: #cb4c62; --red-bg: #fff0f2;
+      --shadow: 0 16px 60px #29214908;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif; }
+    button { font: inherit; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--purple); outline-offset: 4px; }
+    .shell { width: min(100% - 40px, 520px); margin: 0 auto; }
+    header { padding: 38px 0 30px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 800; letter-spacing: -.8px; }
+    .brand svg { color: var(--purple); width: 29px; height: 29px; }
+    .header-note { color: var(--muted); font-size: 12px; letter-spacing: .3px; }
+    main { padding: 10px 0 24px; }
+    .intro { text-align: center; margin-bottom: 28px; }
+    .eyebrow { display: inline-flex; gap: 7px; align-items: center; color: var(--purple); background: var(--purple-soft); border: 1px solid #8c78d91c; border-radius: 30px; padding: 5px 12px; font-size: 11px; font-weight: 700; letter-spacing: 1.6px; }
+    h1 { margin: 12px 0 6px; font-size: clamp(27px, 6vw, 34px); line-height: 1.4; letter-spacing: -1.5px; }
+    .intro p { margin: 0; font-size: 14px; color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 27px; box-shadow: var(--shadow); }
+    .mission-control { --console-ink: #49636b; --console-accent: #076b70; --console-grid: #076b7010; --console-bg: #edf6f5; --console-border: #8cbbbc; position: relative; isolation: isolate; padding: 17px; border: 1px solid var(--console-border); border-top: 3px solid var(--console-accent); border-radius: 5px; background: linear-gradient(var(--console-grid) 1px, transparent 1px), linear-gradient(90deg, var(--console-grid) 1px, transparent 1px), var(--console-bg); background-size: 20px 20px; box-shadow: inset 0 0 0 4px var(--console-bg), 0 4px 14px #062f3510; }
+    .mission-control::after { content: ""; position: absolute; inset: 7px; pointer-events: none; z-index: -1; border: 1px solid var(--console-border); opacity: .3; }
+    .console-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; padding-bottom: 11px; border-bottom: 1px solid var(--console-border); color: var(--console-ink); font-size: 11px; }
+    .console-heading h2 { margin: 0; font-size: 13px; letter-spacing: 1px; color: var(--console-accent); }
+    .console-overview { display: flex; align-items: center; gap: 12px; padding: 14px 0 0; }
+    .radar { width: 52px; height: 52px; flex-shrink: 0; color: var(--console-accent); }
+    .radar-sweep { transform-origin: 32px 32px; animation: radar-sweep 12s linear infinite; }
+    .console-overview p { margin: 0; color: var(--console-ink); font-size: 11px; }
+    .console-overview strong { display: block; color: var(--console-accent); font-size: 13px; letter-spacing: .5px; }
+    .mission-code, .telemetry-value, .progress-readout { font-variant-numeric: tabular-nums; }
+    .mission-code { font-family: Consolas, monospace; letter-spacing: 1px; }
+    .status { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 14px 0; }
+    .status > div { background: var(--card); border: 1px solid var(--console-border); border-radius: 3px; padding: 10px; }
+    .telemetry-label { display: block; color: var(--console-ink); font-size: 11px; margin-bottom: 4px; }
+    .telemetry-value { display: block; color: var(--text); font-size: 13px; }
+    .telemetry-value strong { font-family: Consolas, monospace; font-size: 27px; font-weight: 700; line-height: 1.3; }
+    .score .telemetry-value, .score strong { color: var(--console-accent); }
+    .progress-readout { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 7px; font-size: 11px; color: var(--console-ink); }
+    .progress-readout strong { color: var(--console-accent); font-family: Consolas, monospace; font-size: 12px; }
+    .track { position: relative; background: var(--line); height: 10px; border: 1px solid var(--console-ink); border-radius: 2px; overflow: hidden; }
+    .track::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 2px), var(--console-bg) calc(10% - 2px), var(--console-bg) 10%); pointer-events: none; }
+    .bar { width: 0; height: 100%; background: var(--console-accent); transition: width .45s ease; }
+    .console-footer { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--console-border); color: var(--console-ink); font-size: 11px; }
+    .console-footer::before { content: ""; width: 6px; height: 6px; border-radius: 1px; background: var(--console-accent); box-shadow: 0 0 0 3px var(--console-grid); flex-shrink: 0; }
+    @keyframes radar-sweep { to { transform: rotate(360deg); } }
+    .space-art { position: relative; height: 168px; margin: 21px 0 23px; overflow: hidden; border-radius: 16px; background: radial-gradient(ellipse at 50% 90%, #39335e, #202035 65%); }
+    .space-art svg { display: block; width: 100%; height: 100%; }
+    .planet-float { animation: float 6s ease-in-out infinite; transform-origin: center; }
+    .twinkle { animation: twinkle 3s ease-in-out infinite alternate; }
+    .question-meta { display: flex; align-items: center; gap: 7px; color: var(--purple); font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+    .dot { width: 5px; height: 5px; background: var(--purple); border-radius: 50%; }
+    h2 { font-size: 21px; line-height: 1.55; letter-spacing: -.6px; margin: 9px 0 5px; word-break: keep-all; }
+    .hint { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+    .answers { display: grid; gap: 10px; }
+    .answer { width: 100%; display: flex; align-items: center; gap: 13px; text-align: left; border: 1px solid var(--line); padding: 12px 14px; min-height: 53px; border-radius: 11px; color: var(--text); background: var(--card); cursor: pointer; transition: background .2s, border-color .2s, transform .2s; }
+    .answer:not(:disabled):hover { background: var(--purple-soft); border-color: #ab9ae6; transform: translateY(-1px); }
+    .letter { display: grid; place-items: center; flex-shrink: 0; width: 27px; height: 27px; background: var(--soft); border: 1px solid var(--line); border-radius: 7px; font-size: 11px; font-weight: 700; color: var(--muted); }
+    .answer .mark { margin-left: auto; font-size: 17px; font-weight: 800; }
+    .answer:disabled { cursor: default; opacity: 1; }
+    .answer.correct { color: var(--green); border-color: #65bc94; background: var(--green-bg); animation: pop .35s ease; }
+    .answer.wrong { color: var(--red); border-color: #e893a3; background: var(--red-bg); animation: shake .45s ease; }
+    .answer.correct .letter { color: var(--green); background: var(--green-bg); border-color: #65bc9466; }
+    .answer.wrong .letter { color: var(--red); background: var(--red-bg); border-color: #e893a366; }
+    .answer.dimmed { color: var(--muted); }
+    .feedback { border-radius: 11px; margin-top: 16px; padding: 13px 15px; font-size: 13px; animation: enter .3s ease; }
+    .feedback strong { display: block; margin-bottom: 3px; }
+    .feedback.good { background: var(--green-bg); color: var(--green); }
+    .feedback.bad { background: var(--red-bg); color: var(--red); }
+    .next { width: 100%; min-height: 46px; margin-top: 20px; border: 0; border-radius: 10px; background: var(--purple); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; transition: filter .2s, transform .2s; }
+    .next:not(:disabled):hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .next:disabled { background: var(--soft); color: var(--muted); cursor: not-allowed; }
+    .card-bottom { text-align: center; font-size: 11px; color: var(--muted); margin: 13px 0 0; }
+    .journey { display: flex; justify-content: center; align-items: center; gap: 7px; margin: 23px 0 10px; }
+    .step { width: 6px; height: 6px; border-radius: 50%; background: #dcdde8; }
+    .step.active { background: var(--purple); box-shadow: 0 0 0 4px var(--purple-soft); }
+    .step.right { background: #65bc94; }
+    .step.missed { background: #e893a3; }
+    footer { color: var(--muted); text-align: center; font-size: 11px; padding: 9px 0 27px; }
+    .footer-star { color: #b2a5e5; padding: 0 5px; }
+    [hidden] { display: none !important; }
+    .result { text-align: center; padding: 29px 0 8px; animation: enter .5s ease; }
+    .emoji { font-size: 65px; line-height: 1.4; margin-bottom: 15px; animation: pop .6s ease; }
+    .result h2 { font-size: 27px; margin: 12px 0 8px; }
+    .result-copy { font-size: 14px; color: var(--muted); word-break: keep-all; margin: 0 auto 24px; max-width: 330px; }
+    .result-score { background: var(--soft); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin: 24px 0; }
+    .big-score { color: var(--purple); font-size: 52px; font-weight: 800; line-height: 1.2; letter-spacing: -2px; }
+    .big-score span { color: var(--muted); font-size: 22px; letter-spacing: 0; }
+    .result-stats { display: flex; justify-content: center; gap: 25px; font-size: 12px; margin-top: 12px; color: var(--muted); }
+    .result-stats b { color: var(--text); }
+    @keyframes float { 50% { transform: translateY(-7px) rotate(-3deg); } }
+    @keyframes twinkle { to { opacity: .25; } }
+    @keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+    @keyframes pop { 50% { transform: scale(1.025); } }
+    @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #14141e; --card: #1e1e2b; --text: #eeedf6; --muted: #9997ae; --line: #333244; --soft: #272636; --purple: #b1a0ff; --purple-soft: #302944; --green: #88dbaf; --green-bg: #203c32; --red: #ff9aaa; --red-bg: #432934; --shadow: 0 16px 60px #0002; }
+      .next:not(:disabled) { color: #211a3e; }
+      .step { background: #444153; }
+      .mission-control { --console-ink: #a9c5c9; --console-accent: #70e2cf; --console-grid: #70e2cf0d; --console-bg: #13262d; --console-border: #375e64; }
+    }
+    @media (max-width: 440px) { header { padding-top: 22px; } .card { padding: 20px; } .space-art { height: 148px; } .header-note { font-size: 11px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="8" fill="currentColor" opacity=".18"/><circle cx="16" cy="16" r="5" fill="currentColor"/><ellipse cx="16" cy="16" rx="16" ry="6" transform="rotate(-30 16 16)" stroke="currentColor" stroke-width="1.7"/><circle cx="27" cy="7" r="2.5" fill="currentColor"/></svg>
+        오르빗<span style="color:var(--purple)">.</span>
+      </div>
+      <span class="header-note">호기심이 닿는 곳까지</span>
+    </header>
+    <main>
+      <div class="intro">
+        <span class="eyebrow">✧ SPACE EXPLORER</span>
+        <h1>당신의 우주력은 몇 점?</h1>
+        <p>10개의 질문을 따라, 우주 저편으로 떠나 보세요.</p>
+      </div>
+      <section class="card" aria-label="우주 탐험 퀴즈">
+        <div class="mission-control" role="region" aria-labelledby="console-title">
+          <div class="console-heading">
+            <h2 id="console-title">우주 임무 관제센터</h2>
+            <span class="mission-code" aria-label="임무 식별자 ORB 01">ORB–01</span>
+          </div>
+          <div class="console-overview">
+            <svg class="radar" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <g stroke="currentColor" stroke-width=".8" opacity=".45"><circle cx="32" cy="32" r="29"/><circle cx="32" cy="32" r="19"/><circle cx="32" cy="32" r="9"/><path d="M32 3v58M3 32h58"/></g>
+              <path class="radar-sweep" d="M32 32V3a29 29 0 0 1 25.1 14.5Z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width=".7"/>
+              <g fill="currentColor"><circle cx="43" cy="19" r="2"/><circle cx="22" cy="42" r="1.5"/><circle cx="32" cy="32" r="2"/></g>
+            </svg>
+            <p><strong>탐사 현황 모니터</strong>질문 응답 · 진행 상황 추적</p>
+          </div>
+          <div class="status">
+            <div>
+              <span class="telemetry-label">탐사 단계</span>
+              <span class="telemetry-value" id="question-count">탐험 중 <strong>01</strong> / 10</span>
+            </div>
+            <div class="score" aria-live="polite" aria-atomic="true">
+              <span class="telemetry-label">획득 점수</span>
+              <span class="telemetry-value"><strong id="score">0</strong> / 100 점</span>
+            </div>
+          </div>
+          <div class="progress-readout"><span>임무 진행률 · <span id="completed-count">0 / 10 완료</span></span><strong id="progress-percent">0%</strong></div>
+          <div class="track" role="progressbar" aria-label="완료한 문제" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-valuetext="10문제 중 0문제 완료"><div class="bar" id="bar"></div></div>
+          <div class="console-footer" id="mission-state">임무 진행 중 · 응답 대기</div>
+        </div>
+        <div id="quiz">
+          <div class="space-art" role="img" aria-label="별이 빛나는 우주 속 보라색 고리 행성">
+            <svg viewBox="0 0 460 168" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="planet" x1="190" y1="40" x2="260" y2="128" gradientUnits="userSpaceOnUse"><stop stop-color="#e1d6ff"/><stop offset=".45" stop-color="#ac94e1"/><stop offset="1" stop-color="#695495"/></linearGradient>
+                <linearGradient id="ring" x1="139" y1="110" x2="322" y2="65" gradientUnits="userSpaceOnUse"><stop stop-color="#c7b1f0"/><stop offset=".5" stop-color="#f2d9ee"/><stop offset="1" stop-color="#a69bd7"/></linearGradient>
+                <radialGradient id="glow"><stop stop-color="#a58be0" stop-opacity=".2"/><stop offset="1" stop-color="#a58be0" stop-opacity="0"/></radialGradient>
+              </defs>
+              <ellipse cx="230" cy="89" rx="132" ry="86" fill="url(#glow)"/>
+              <g fill="#d8d3ed">
+                <circle cx="37" cy="38" r="1.3"/><circle cx="87" cy="117" r="1"/><circle cx="131" cy="29" r="1"/><circle cx="338" cy="38" r="1.4"/><circle cx="410" cy="92" r="1"/><circle cx="374" cy="136" r="1.2"/><circle cx="303" cy="143" r=".8"/><circle cx="173" cy="143" r=".7"/><circle cx="58" cy="88" r=".7"/><circle cx="284" cy="24" r=".8"/>
+              </g>
+              <g class="twinkle" stroke="#e9d9ff" stroke-linecap="round"><path d="M105 55v10m-5-5h10"/><path d="M363 68v8m-4-4h8"/><path d="M322 112v6m-3-3h6"/></g>
+              <g class="planet-float">
+                <ellipse cx="230" cy="86" rx="99" ry="24" transform="rotate(-23 230 86)" stroke="#9f8fc5" stroke-width="9" opacity=".65"/>
+                <circle cx="230" cy="83" r="44" fill="url(#planet)"/>
+                <path d="M195 58c14 10 38 13 68 8M188 78c19 11 53 16 83 6M194 101c23 10 46 11 68 7" stroke="#ede1ff" stroke-opacity=".16" stroke-width="7"/>
+                <path d="M139 113c6 16 51 13 102-8s88-47 82-62" stroke="url(#ring)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M139 113c6 16 51 13 102-8s88-47 82-62" stroke="#e8d8f7" stroke-width="2" stroke-opacity=".5"/>
+              </g>
+              <circle cx="393" cy="30" r="10" fill="#9eadd1" opacity=".55"/><circle cx="390" cy="27" r="2.5" fill="#c0cbe2" opacity=".4"/>
+              <text x="18" y="150" fill="#b9b0d2" font-size="8" font-family="sans-serif" letter-spacing="2">THE UNIVERSE AWAITS</text>
+              <text x="395" y="150" fill="#b9b0d2" font-size="8" font-family="sans-serif" letter-spacing="1">✧ 001</text>
+            </svg>
+          </div>
+          <div class="question-meta"><span class="dot"></span><span id="category"></span></div>
+          <h2 id="question" tabindex="-1"></h2>
+          <p class="hint">정답이라고 생각하는 하나를 골라 주세요.</p>
+          <div class="answers" id="answers" role="group" aria-labelledby="question"></div>
+          <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+          <button class="next" id="next" disabled>답을 선택해 주세요</button>
+          <p class="card-bottom">서두르지 않아도 괜찮아요. 우주는 넓으니까요.</p>
+        </div>
+        <div id="results" class="result" hidden>
+          <div class="emoji" id="result-emoji" aria-hidden="true"></div>
+          <span class="eyebrow">MISSION COMPLETE</span>
+          <h2 id="result-title" tabindex="-1"></h2>
+          <p class="result-copy" id="result-copy"></p>
+          <div class="result-score">
+            <div class="big-score" id="final-score"></div>
+            <div class="result-stats"><span>정답 <b id="correct-total"></b></span><span>정답률 <b id="accuracy"></b></span></div>
+          </div>
+          <button class="next" id="restart">다시 탐험하기 ↗</button>
+          <p class="card-bottom">새로운 발견은 언제나 다음 질문에서 시작돼요.</p>
+        </div>
+      </section>
+      <div class="journey" id="journey" aria-label="문제별 진행 상태"></div>
+    </main>
+    <footer>작은 호기심, 무한한 우주 <span class="footer-star">✧</span> MADE FOR CURIOUS MINDS</footer>
+  </div>
+  <script>
+    "use strict";
+    const questions = [
+      { category: "태양계 · OUR SOLAR SYSTEM", question: "태양계에서 가장 큰 행성은 무엇일까요?", answers: ["지구", "토성", "목성", "해왕성"], correct: 2, fact: "목성의 부피는 지구 약 1,321개가 들어갈 만큼 커요. 태양계 행성 중 가장 거대한 가스 행성이죠." },
+      { category: "달 탐사 · MOON LANDING", question: "인류가 처음 달에 발을 디딘 해는 언제일까요?", answers: ["1957년", "1969년", "1977년", "1989년"], correct: 1, fact: "1969년, 아폴로 11호의 닐 암스트롱과 버즈 올드린이 달 표면을 걸었어요." },
+      { category: "붉은 행성 · THE RED PLANET", question: "화성이 붉게 보이는 이유는 무엇일까요?", answers: ["표면의 산화철 때문에", "뜨거운 용암 때문에", "붉은 구름 때문에", "태양빛이 더 강해서"], correct: 0, fact: "화성의 토양에는 녹과 같은 성분인 산화철이 들어 있어요. 이 먼지가 화성을 붉게 보이게 해요." },
+      { category: "우리의 별 · THE SUN", question: "태양이 에너지를 만들어 내는 주된 원리는?", answers: ["석탄의 연소", "핵분열", "전기 방전", "핵융합"], correct: 3, fact: "태양 중심에서는 수소 원자핵들이 헬륨으로 융합하면서 엄청난 에너지를 내요." },
+      { category: "우주 속 거리 · COSMIC DISTANCE", question: "‘광년’은 무엇을 나타내는 단위일까요?", answers: ["별의 나이", "빛의 밝기", "거리", "시간"], correct: 2, fact: "1광년은 빛이 진공에서 1년 동안 이동하는 거리예요. 약 9조 4,600억 km에 달해요!" },
+      { category: "고리의 세계 · RING WORLD", question: "크고 뚜렷한 고리로 유명한 행성은?", answers: ["수성", "토성", "금성", "화성"], correct: 1, fact: "토성의 고리는 대부분 얼음 조각과 암석으로 이루어져 있어요. 다른 거대 행성들도 고리를 가지고 있답니다." },
+      { category: "궤도 위의 집 · LIFE IN ORBIT", question: "국제우주정거장(ISS)은 주로 어디를 돌고 있을까요?", answers: ["달 주변", "태양과 화성 사이", "목성 주변", "지구 주변의 낮은 궤도"], correct: 3, fact: "ISS는 지구 상공 약 400km에서 궤도를 돌아요. 약 90분마다 지구를 한 바퀴 돌죠." },
+      { category: "우주의 경계 · BLACK HOLES", question: "블랙홀의 ‘사건의 지평선’은 어떤 경계일까요?", answers: ["빛조차 빠져나올 수 없는 경계", "별이 탄생하는 경계", "우주가 끝나는 경계", "중력이 사라지는 경계"], correct: 0, fact: "사건의 지평선 안쪽에서는 빛조차 바깥으로 나올 수 없어요. 우주의 끝을 뜻하는 것은 아니에요." },
+      { category: "우리의 은하 · MILKY WAY", question: "태양계가 속해 있는 은하의 이름은?", answers: ["안드로메다은하", "삼각형자리은하", "우리은하", "솜브레로은하"], correct: 2, fact: "태양계는 우리은하에 속해 있어요. 밤하늘의 은하수는 우리은하의 수많은 별이 띠처럼 보이는 모습이에요." },
+      { category: "먼 우주로 · DEEP SPACE", question: "인류가 만든 탐사선 중 최초로 성간 공간에 진입한 것은?", answers: ["아폴로 11호", "보이저 1호", "큐리오시티", "주노"], correct: 1, fact: "보이저 1호는 2012년 태양권계면을 넘어 성간 공간에 진입했어요. 1977년에 시작한 여행이 지금도 이어지고 있죠." }
+    ];
+    const $ = id => document.getElementById(id);
+    let current = 0;
+    let score = 0;
+    let answered = false;
+    const history = [];
+
+    function updateProgress() {
+      $("bar").style.width = `${history.length / questions.length * 100}%`;
+      document.querySelector('[role="progressbar"]').setAttribute("aria-valuenow", history.length);
+      document.querySelector('[role="progressbar"]').setAttribute("aria-valuetext", `${questions.length}문제 중 ${history.length}문제 완료`);
+      $("completed-count").textContent = `${history.length} / ${questions.length} 완료`;
+      $("progress-percent").textContent = `${history.length / questions.length * 100}%`;
+      $("mission-state").textContent = history.length === questions.length ? "임무 완료 · 모든 응답 수신" : answered ? "응답 수신 완료 · 다음 단계 준비" : "임무 진행 중 · 응답 대기";
+      $("journey").replaceChildren(...questions.map((_, i) => {
+        const step = document.createElement("span");
+        step.className = "step" + (i < history.length ? (history[i] ? " right" : " missed") : i === current ? " active" : "");
+        step.setAttribute("aria-label", `${i + 1}번: ${i < history.length ? (history[i] ? "정답" : "오답") : i === current ? "현재 문제" : "대기"}`);
+        return step;
+      }));
+    }
+
+    function renderQuestion(focus = false) {
+      answered = false;
+      const item = questions[current];
+      $("question-count").innerHTML = `탐험 중 <strong>${String(current + 1).padStart(2, "0")}</strong> / 10`;
+      $("category").textContent = item.category;
+      $("question").textContent = item.question;
+      $("feedback").hidden = true;
+      $("next").disabled = true;
+      $("next").textContent = "답을 선택해 주세요";
+      $("answers").replaceChildren(...item.answers.map((text, i) => {
+        const button = document.createElement("button");
+        button.className = "answer";
+        const letter = document.createElement("span");
+        letter.className = "letter";
+        letter.textContent = String.fromCharCode(65 + i);
+        const label = document.createElement("span");
+        label.textContent = text;
+        button.append(letter, label);
+        button.addEventListener("click", () => choose(i));
+        return button;
+      }));
+      updateProgress();
+      if (focus) $("question").focus({ preventScroll: true });
+    }
+
+    function choose(index) {
+      if (answered) return;
+      const moveFocus = $("answers").contains(document.activeElement);
+      answered = true;
+      const item = questions[current];
+      const correct = index === item.correct;
+      history.push(correct);
+      if (correct) score += 10;
+      $("score").textContent = score;
+      Array.from($("answers").children).forEach((button, i) => {
+        button.disabled = true;
+        if (i === item.correct || i === index) {
+          const isCorrect = i === item.correct;
+          button.classList.add(isCorrect ? "correct" : "wrong");
+          const mark = document.createElement("span");
+          mark.className = "mark";
+          mark.textContent = isCorrect ? "✓" : "✕";
+          mark.setAttribute("aria-label", isCorrect ? "정답" : "오답");
+          button.append(mark);
+        } else {
+          button.classList.add("dimmed");
+        }
+      });
+      const heading = document.createElement("strong");
+      heading.textContent = correct ? "✦ 정답이에요! 한 걸음 더 우주로." : "앗, 아쉬워요! 새로운 사실을 발견했네요.";
+      const explanation = document.createElement("span");
+      explanation.textContent = item.fact;
+      $("feedback").className = `feedback ${correct ? "good" : "bad"}`;
+      $("feedback").replaceChildren(heading, explanation);
+      $("feedback").hidden = false;
+      $("next").disabled = false;
+      $("next").textContent = current === questions.length - 1 ? "탐험 결과 보기 ↗" : "다음 행성으로 →";
+      updateProgress();
+      if (moveFocus) $("next").focus({ preventScroll: true });
+    }
+
+    $("next").addEventListener("click", () => {
+      if (!answered) return;
+      if (current < questions.length - 1) {
+        current++;
+        renderQuestion(true);
+      } else {
+        $("quiz").hidden = true;
+        $("results").hidden = false;
+        $("question-count").textContent = "탐험 완료 · 10 / 10";
+        const reaction = score >= 80
+          ? ["🧑‍🚀", "당신은 우주 탐험 대장!", "놀라운 우주력이에요. 머나먼 별을 향한 다음 임무도 당신에게 맡길게요."]
+          : score >= 50
+            ? ["🚀", "멋진 우주 여행이었어요!", "호기심 가득한 탐험가군요. 오늘 발견한 지식과 함께 더 멀리 날아가 보세요."]
+            : ["🌱", "호기심의 첫 궤도에 진입!", "모든 우주 비행사에게도 첫걸음이 있어요. 오늘의 발견이 다음 탐험의 연료가 될 거예요."];
+        $("result-emoji").textContent = reaction[0];
+        $("result-title").textContent = reaction[1];
+        $("result-copy").textContent = reaction[2];
+        $("final-score").replaceChildren(document.createTextNode(score + " "), Object.assign(document.createElement("span"), { textContent: "/ 100" }));
+        $("correct-total").textContent = `${score / 10} / 10`;
+        $("accuracy").textContent = `${score}%`;
+        $("result-title").focus({ preventScroll: true });
+        $("results").scrollIntoView({ block: "nearest" });
+      }
+    });
+    $("restart").addEventListener("click", () => {
+      current = 0;
+      score = 0;
+      history.length = 0;
+      $("score").textContent = "0";
+      $("results").hidden = true;
+      $("quiz").hidden = false;
+      renderQuestion(true);
+    });
+    renderQuestion();
+  </script>
+</body>
+</html>
